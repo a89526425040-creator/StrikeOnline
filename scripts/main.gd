@@ -45,9 +45,9 @@ func _load_sandstone_map() -> void:
 
 	var horizontal_size := maxf(bounds.size.x, bounds.size.z)
 	var map_scale := 64.0 / horizontal_size
-	# Start above the highest point of the imported level, then let gravity
-	# place the player on the actual map collision instead of below the mesh.
-	player_spawn_height = maxf(3.0, bounds.size.y * map_scale + 2.0)
+	# The map is normalized so its lowest point is at y=0. Spawn just above
+	# the ground; do not start dozens of metres in the air above tall geometry.
+	player_spawn_height = 1.2
 	map_instance.scale = Vector3.ONE * map_scale
 	map_instance.position = Vector3(
 		-bounds.get_center().x * map_scale,
