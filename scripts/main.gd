@@ -96,7 +96,6 @@ func _build_fallback_ground() -> void:
 	material.albedo_color = Color(0.48, 0.40, 0.29)
 	material.roughness = 1.0
 	mesh_instance.material_override = material
-	mesh_instance.rotation_degrees.x = -90.0
 	ground.add_child(mesh_instance)
 
 	var collision := CollisionShape3D.new()
