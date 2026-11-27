@@ -3,7 +3,7 @@ extends Node3D
 const PLAYER_SCRIPT = preload("res://scripts/player.gd")
 const MAP_SCENE = preload("res://sendstone_new (1).glb")
 
-var player_spawn_height := 3.0
+var player_spawn_height := 1.2
 
 func _ready() -> void:
 	_build_environment()
@@ -12,12 +12,12 @@ func _ready() -> void:
 	var player := CharacterBody3D.new()
 	player.set_script(PLAYER_SCRIPT)
 	player.name = "Player"
-	player.position = Vector3(0, player_spawn_height, 0)
+	player.position = Vector3(0.0, player_spawn_height, 0.0)
 	add_child(player)
 	_build_hud()
 
-
-func _place_player_on_ground(player: Character:= WorldEnvironment.new()
+func _build_environment() -> void:
+	var world := WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	env.sky = Sky.new()
@@ -45,8 +45,7 @@ func _load_sandstone_map() -> void:
 
 	var horizontal_size := maxf(bounds.size.x, bounds.size.z)
 	var map_scale := 64.0 / horizontal_size
-	# The map is normalized so its lowest point is at y=0. Spawn just above
-	# the ground; do not start dozens of metres in the air above tall geometry.
+	# Normalize the bottom of the map to y=0 and spawn the player just above it.
 	player_spawn_height = 1.2
 	map_instance.scale = Vector3.ONE * map_scale
 	map_instance.position = Vector3(
@@ -77,8 +76,8 @@ func _get_map_bounds(root: Node) -> AABB:
 	return result
 
 func _add_map_collisions(root: Node) -> void:
-	# Build collision as a sibling of each rendered mesh. This preserves the
-	# imported mesh's local transform without applying it twice.
+	# Attach each static collision directly to its mesh so imported GLB
+	# transforms are inherited once and the collision matches the visible mesh.
 	var stack: Array[Node] = [root]
 	var collision_count := 0
 	while not stack.is_empty():
@@ -87,29 +86,26 @@ func _add_map_collisions(root: Node) -> void:
 			var mesh_node := node as MeshInstance3D
 			var trimesh_shape := mesh_node.mesh.create_trimesh_shape()
 			if trimesh_shape != null:
-				# Keep collision directly under the rendered mesh. It inherits
-				# every GLB parent transform exactly once and uses mesh-local vertices.
 				var body := StaticBody3D.new()
 				body.name = mesh_node.name + "_Collision"
 				body.collision_layer = 1
 				body.collision_mask = 1
-				body.position = Vector3.ZERO
 				var shape_node := CollisionShape3D.new()
 				shape_node.shape = trimesh_shape
-				shape_node.position = Vector3.ZERO
 				body.add_child(shape_node)
 				mesh_node.add_child(body)
 				collision_count += 1
 		for child in node.get_children():
-			stack.append(child)
+			if not (child is StaticBody3D and child.name.ends_with("_Collision")):
+				stack.append(child)
 	print("Sandstone collision bodies created: ", collision_count)
 
 func _build_fallback_ground() -> void:
-	# Safety floor guarantees the player cannot fall forever if part of the
-	# imported GLB has missing or one-sided collision geometry.
+	# A solid base prevents falling through gaps in imported level geometry.
 	var ground := StaticBody3D.new()
 	ground.name = "SafetyGround"
-	ground.position.y = 0.0
+	ground.collision_layer = 1
+	ground.collision_mask = 1
 	add_child(ground)
 
 	var mesh_instance := MeshInstance3D.new()
