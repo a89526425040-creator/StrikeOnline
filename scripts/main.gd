@@ -15,30 +15,9 @@ func _ready() -> void:
 	player.position = Vector3(0, player_spawn_height, 0)
 	add_child(player)
 	_build_hud()
-	_place_player_on_ground.call_deferred(player)
 
-func _place_player_on_ground(player: CharacterBody3D) -> void:
-	# Wait until Godot has registered the imported map collision bodies.
-	await get_tree().physics_frame
-	var space := get_world_3d().direct_space_state
-	var query := PhysicsRayQueryParameters3D.create(
-		Vector3(0.0, player_spawn_height + 20.0, 0.0),
-		Vector3(0.0, -100.0, 0.0)
-	)
-	query.collision_mask = 1
-	query.exclude = [player.get_rid()]
-	var hit := space.intersect_ray(query)
-	if not hit.is_empty():
-		player.global_position = hit.position + Vector3.UP * 0.12
-		print("Player spawned on map at: ", player.global_position)
-	else:
-		# The safety floor is at y=0; start just above it if the map has no
-		# collision directly beneath the central spawn point.
-		player.global_position = Vector3(0.0, 1.2, 0.0)
-		push_warning("No Sandstone surface found below spawn; using safety floor.")
 
-func _build_environment() -> void:
-	var world := WorldEnvironment.new()
+func _place_player_on_ground(player: Character:= WorldEnvironment.new()
 	var env := Environment.new()
 	env.background_mode = Environment.BG_SKY
 	env.sky = Sky.new()
@@ -108,15 +87,18 @@ func _add_map_collisions(root: Node) -> void:
 			var mesh_node := node as MeshInstance3D
 			var trimesh_shape := mesh_node.mesh.create_trimesh_shape()
 			if trimesh_shape != null:
+				# Keep collision directly under the rendered mesh. It inherits
+				# every GLB parent transform exactly once and uses mesh-local vertices.
 				var body := StaticBody3D.new()
 				body.name = mesh_node.name + "_Collision"
 				body.collision_layer = 1
 				body.collision_mask = 1
+				body.position = Vector3.ZERO
 				var shape_node := CollisionShape3D.new()
 				shape_node.shape = trimesh_shape
+				shape_node.position = Vector3.ZERO
 				body.add_child(shape_node)
-				mesh_node.get_parent().add_child(body)
-				body.transform = mesh_node.transform
+				mesh_node.add_child(body)
 				collision_count += 1
 		for child in node.get_children():
 			stack.append(child)
