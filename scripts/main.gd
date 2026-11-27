@@ -15,6 +15,27 @@ func _ready() -> void:
 	player.position = Vector3(0, player_spawn_height, 0)
 	add_child(player)
 	_build_hud()
+	_place_player_on_ground.call_deferred(player)
+
+func _place_player_on_ground(player: CharacterBody3D) -> void:
+	# Wait until Godot has registered the imported map collision bodies.
+	await get_tree().physics_frame
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(
+		Vector3(0.0, player_spawn_height + 20.0, 0.0),
+		Vector3(0.0, -100.0, 0.0)
+	)
+	query.collision_mask = 1
+	query.exclude = [player.get_rid()]
+	var hit := space.intersect_ray(query)
+	if not hit.is_empty():
+		player.global_position = hit.position + Vector3.UP * 0.12
+		print("Player spawned on map at: ", player.global_position)
+	else:
+		# The safety floor is at y=0; start just above it if the map has no
+		# collision directly beneath the central spawn point.
+		player.global_position = Vector3(0.0, 1.2, 0.0)
+		push_warning("No Sandstone surface found below spawn; using safety floor.")
 
 func _build_environment() -> void:
 	var world := WorldEnvironment.new()
