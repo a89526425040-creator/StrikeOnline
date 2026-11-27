@@ -33,7 +33,13 @@ jobs:
           sdkmanager --sdk_root="$ANDROID_HOME" "platform-tools" "platforms;android-34" "build-tools;34.0.0" "build-tools;33.0.2" "cmdline-tools;latest" "cmake;3.10.2.4988404" "ndk;23.2.8568313"
           test -x "$ANDROID_HOME/platform-tools/adb"
           test -x "$ANDROID_HOME/build-tools/34.0.0/apksigner"
-          ls -la "$ANDROID_HOME/build-tools"
+          test -d "$ANDROID_HOME/platforms/android-34"
+          test -d "$ANDROID_HOME/platform-tools"
+          test -d "$ANDROID_HOME/cmdline-tools/latest"
+          test -d "$ANDROID_HOME/ndk/23.2.8568313"
+          test -d "$ANDROID_HOME/cmake/3.10.2.4988404"
+          echo "SDK package verification:"
+          find "$ANDROID_HOME" -maxdepth 3 -type d | sort | grep -E 'platforms/android-34|build-tools/34.0.0|platform-tools|cmdline-tools/latest|ndk/23.2.8568313|cmake/3.10.2.4988404'
 
           mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
           wget -q https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz -O /tmp/godot-templates.tpz
@@ -61,6 +67,9 @@ jobs:
 
       - name: Export Android debug APK
         run: |
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$HOME/.android/debug.keystore"
+          export GODOT_ANDROID_KEYSTORE_DEBUG_USER="androiddebugkey"
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD="android"
           mkdir -p build
           godot --headless --verbose --path . --export-debug "Android" build/StrikeOnline-debug.apk
           test -s build/StrikeOnline-debug.apk
