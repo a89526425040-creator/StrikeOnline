@@ -1,0 +1,48 @@
+name: Build Windows PC
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: ubuntu-latest
+    container:
+      image: barichello/godot-ci:4.4.1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Windows export templates
+        shell: bash
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y unzip wget zip
+          mkdir -p "$HOME/.local/share/godot/export_templates/4.4.1.stable"
+          wget -q https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz -O /tmp/godot-templates.tpz
+          mkdir -p /tmp/godot-templates
+          unzip -q /tmp/godot-templates.tpz -d /tmp/godot-templates
+          cp -a /tmp/godot-templates/templates/. "$HOME/.local/share/godot/export_templates/4.4.1.stable/"
+          test -s "$HOME/.local/share/godot/export_templates/4.4.1.stable/windows_x86_64.exe"
+
+      - name: Import and validate project
+        run: godot --headless --path . --editor --quit
+
+      - name: Export Windows x64 game
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p build
+          godot --headless --verbose --path . --export-release "Windows Desktop" build/StrikeOnline.exe
+          test -s build/StrikeOnline.exe
+          zip -j build/StrikeOnline-Windows-x64.zip build/StrikeOnline.exe
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: StrikeOnline-Windows-x64
+          path: build/StrikeOnline-Windows-x64.zip
+          if-no-files-found: error
+          retention-days: 14
