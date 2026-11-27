@@ -7,7 +7,7 @@ const MOUSE_SENSITIVITY := 0.0022
 const FIRE_RATE := 0.105
 const MAGAZINE_SIZE := 30
 
-var gravity := 18.0
+var gravity := 24.0
 var pitch := 0.0
 var fire_timer := 0.0
 var ammo := MAGAZINE_SIZE
@@ -17,6 +17,9 @@ var weapon_root: Node3D
 var ray: RayCast3D
 
 func _ready() -> void:
+	floor_snap_length = 0.6
+	floor_max_angle = deg_to_rad(50.0)
+	floor_stop_on_slope = true
 	_setup_input()
 	_add_collision()
 	_add_camera_and_weapon()
@@ -98,7 +101,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	fire_timer = maxf(0.0, fire_timer - delta)
-	if not is_on_floor():
+	if is_on_floor():
+		if velocity.y < 0.0:
+			velocity.y = 0.0
+	else:
 		velocity.y -= gravity * delta
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (transform.basis * Vector3(input.x, 0, input.y)).normalized()
