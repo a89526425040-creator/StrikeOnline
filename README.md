@@ -21,4 +21,4 @@ Android-first 3D FPS prototype built with Godot 4.4.
 This is an original game prototype inspired by the competitive mobile FPS genre. It does not contain Standoff 2 assets or branding.
 
 ## Build
-Open project.godot in Godot 4.4 or newer. Android export configuration and automated APK builds will be added in the next setup step.
+Open project.godot in Godot 4.4 or newer. Android debug APK export is configured through GitHub Actions in .github/workflows/android-apk.yml.
