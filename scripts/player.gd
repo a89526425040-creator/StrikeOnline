@@ -15,9 +15,24 @@ var weapon_root: Node3D
 var ray: RayCast3D
 
 func _ready() -> void:
+	_setup_input()
 	_add_collision()
 	_add_camera_and_weapon()
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func _setup_input() -> void:
+	_add_key_action("move_forward", KEY_W)
+	_add_key_action("move_back", KEY_S)
+	_add_key_action("move_left", KEY_A)
+	_add_key_action("move_right", KEY_D)
+	_add_key_action("jump", KEY_SPACE)
+
+func _add_key_action(action_name: String, key: Key) -> void:
+	if not InputMap.has_action(action_name):
+		InputMap.add_action(action_name)
+	var event := InputEventKey.new()
+	event.physical_keycode = key
+	InputMap.action_add_event(action_name, event)
 
 func _add_collision() -> void:
 	var shape := CapsuleShape3D.new()
