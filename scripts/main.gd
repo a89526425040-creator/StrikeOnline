@@ -10,7 +10,7 @@ func _ready() -> void:
 	var player := CharacterBody3D.new()
 	player.set_script(PLAYER_SCRIPT)
 	player.name = "Player"
-	player.position = Vector3(0, 1.2, 0)
+	player.position = Vector3(0, 2.5, 0)
 	add_child(player)
 	_build_hud()
 
@@ -72,20 +72,36 @@ func _get_map_bounds(root: Node) -> AABB:
 	return result
 
 func _add_map_collisions(root: Node) -> void:
+	# Build collision as a sibling of each rendered mesh. This preserves the
+	# imported mesh's local transform without applying it twice.
 	var stack: Array[Node] = [root]
+	var collision_count := 0
 	while not stack.is_empty():
 		var node: Node = stack.pop_back()
 		if node is MeshInstance3D and node.mesh != null:
-			(node as MeshInstance3D).create_trimesh_collision()
+			var mesh_node := node as MeshInstance3D
+			var trimesh_shape := mesh_node.mesh.create_trimesh_shape()
+			if trimesh_shape != null:
+				var body := StaticBody3D.new()
+				body.name = mesh_node.name + "_Collision"
+				body.collision_layer = 1
+				body.collision_mask = 1
+				var shape_node := CollisionShape3D.new()
+				shape_node.shape = trimesh_shape
+				body.add_child(shape_node)
+				mesh_node.get_parent().add_child(body)
+				body.transform = mesh_node.transform
+				collision_count += 1
 		for child in node.get_children():
 			stack.append(child)
+	print("Sandstone collision bodies created: ", collision_count)
 
 func _build_fallback_ground() -> void:
 	# Safety floor guarantees the player cannot fall forever if part of the
 	# imported GLB has missing or one-sided collision geometry.
 	var ground := StaticBody3D.new()
 	ground.name = "SafetyGround"
-	ground.position.y = -0.35
+	ground.position.y = 0.0
 	add_child(ground)
 
 	var mesh_instance := MeshInstance3D.new()
