@@ -6,10 +6,11 @@ const MAP_SCENE = preload("res://sendstone_new (1).glb")
 func _ready() -> void:
 	_build_environment()
 	_load_sandstone_map()
+	_build_fallback_ground()
 	var player := CharacterBody3D.new()
 	player.set_script(PLAYER_SCRIPT)
 	player.name = "Player"
-	player.position = Vector3(0, 0.15, 8)
+	player.position = Vector3(0, 1.2, 0)
 	add_child(player)
 	_build_hud()
 
@@ -35,8 +36,6 @@ func _load_sandstone_map() -> void:
 	map_instance.name = "SandstoneMap"
 	add_child(map_instance)
 
-	# Measure the imported geometry, then normalize the map to a practical
-	# mobile-FPS play area while keeping its proportions and materials.
 	var bounds := _get_map_bounds(map_instance)
 	if bounds.size.x <= 0.01 or bounds.size.z <= 0.01:
 		push_error("Sandstone map has no measurable 3D geometry.")
@@ -80,6 +79,32 @@ func _add_map_collisions(root: Node) -> void:
 			(node as MeshInstance3D).create_trimesh_collision()
 		for child in node.get_children():
 			stack.append(child)
+
+func _build_fallback_ground() -> void:
+	# Safety floor guarantees the player cannot fall forever if part of the
+	# imported GLB has missing or one-sided collision geometry.
+	var ground := StaticBody3D.new()
+	ground.name = "SafetyGround"
+	ground.position.y = -0.35
+	add_child(ground)
+
+	var mesh_instance := MeshInstance3D.new()
+	var floor_mesh := PlaneMesh.new()
+	floor_mesh.size = Vector2(120.0, 120.0)
+	mesh_instance.mesh = floor_mesh
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(0.48, 0.40, 0.29)
+	material.roughness = 1.0
+	mesh_instance.material_override = material
+	mesh_instance.rotation_degrees.x = -90.0
+	ground.add_child(mesh_instance)
+
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(120.0, 0.5, 120.0)
+	collision.shape = shape
+	collision.position.y = -0.25
+	ground.add_child(collision)
 
 func _build_hud() -> void:
 	var layer := CanvasLayer.new()
