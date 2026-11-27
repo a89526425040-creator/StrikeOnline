@@ -80,6 +80,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		camera.rotation.x = pitch
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
+			if Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+				return
 			_shoot()
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_ESCAPE:
