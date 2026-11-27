@@ -1,6 +1,8 @@
 extends CharacterBody3D
 
 const SPEED := 6.2
+const SPRINT_SPEED := 9.0
+const ACCELERATION := 22.0
 const MOUSE_SENSITIVITY := 0.0022
 const FIRE_RATE := 0.105
 const MAGAZINE_SIZE := 30
@@ -26,6 +28,7 @@ func _setup_input() -> void:
 	_add_key_action("move_left", KEY_A)
 	_add_key_action("move_right", KEY_D)
 	_add_key_action("jump", KEY_SPACE)
+	_add_key_action("sprint", KEY_SHIFT)
 
 func _add_key_action(action_name: String, key: Key) -> void:
 	if not InputMap.has_action(action_name):
@@ -87,6 +90,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_ESCAPE:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		elif event.keycode == KEY_F11:
+			var next_mode := DisplayServer.WINDOW_MODE_WINDOWED if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else DisplayServer.WINDOW_MODE_FULLSCREEN
+			DisplayServer.window_set_mode(next_mode)
 		elif event.keycode == KEY_R:
 			ammo = MAGAZINE_SIZE
 
@@ -96,8 +102,10 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= gravity * delta
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	var direction := (transform.basis * Vector3(input.x, 0, input.y)).normalized()
-	velocity.x = direction.x * SPEED
-	velocity.z = direction.z * SPEED
+	var move_speed := SPRINT_SPEED if Input.is_action_pressed("sprint") else SPEED
+	var target_velocity := direction * move_speed
+	velocity.x = move_toward(velocity.x, target_velocity.x, ACCELERATION * delta)
+	velocity.z = move_toward(velocity.z, target_velocity.z, ACCELERATION * delta)
 	if Input.is_action_just_pressed("jump") and is_on_floor():
 		velocity.y = 5.2
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
