@@ -3,6 +3,8 @@ extends Node3D
 const PLAYER_SCRIPT = preload("res://scripts/player.gd")
 const MAP_SCENE = preload("res://sendstone_new (1).glb")
 
+var player_spawn_height := 3.0
+
 func _ready() -> void:
 	_build_environment()
 	_load_sandstone_map()
@@ -10,7 +12,7 @@ func _ready() -> void:
 	var player := CharacterBody3D.new()
 	player.set_script(PLAYER_SCRIPT)
 	player.name = "Player"
-	player.position = Vector3(0, 2.5, 0)
+	player.position = Vector3(0, player_spawn_height, 0)
 	add_child(player)
 	_build_hud()
 
@@ -43,6 +45,9 @@ func _load_sandstone_map() -> void:
 
 	var horizontal_size := maxf(bounds.size.x, bounds.size.z)
 	var map_scale := 64.0 / horizontal_size
+	# Start above the highest point of the imported level, then let gravity
+	# place the player on the actual map collision instead of below the mesh.
+	player_spawn_height = maxf(3.0, bounds.size.y * map_scale + 2.0)
 	map_instance.scale = Vector3.ONE * map_scale
 	map_instance.position = Vector3(
 		-bounds.get_center().x * map_scale,
